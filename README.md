@@ -2,7 +2,7 @@
 
 # RotorBlur
 
-![Alt text](https://github.com/zulugithub/HoverHere/blob/main/RotorBlur.png?raw=true "Title")
+![Alt text](https://github.com/zulugithub/RotorBlur/blob/main/RotorBlur.png?raw=true "Title")
 
 ## Introduction
 
