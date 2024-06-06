@@ -10,6 +10,7 @@ A second camera renders the complex 3D rotor geometry into a â€œrender textureâ€
 
 Shader: 
 https://github.com/zulugithub/RotorBlur/blob/main/RotorBlur/Assets/RotationBlurShader.shader
+
 C# script:
 https://github.com/zulugithub/RotorBlur/blob/main/RotorBlur/Assets/SetProjectorToShader.cs
 
