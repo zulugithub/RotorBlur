@@ -18,7 +18,7 @@ Shader "Unlit/RotationBlurShader"
 
             // Projection matrix of the camera acting as a projector * world to camera (acting as a projector) matrix  *  ObjectToWorld
             float4x4 _ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld; 
-            float _sigma_mod = 3.5619;
+            float _sigma_mod = 22.9368; // []
             float _spreading = 40; // [deg]
 
             #pragma multi_compile_fwdbase nolightmap nodirlightmap nodynlightmap novertexlight
@@ -47,7 +47,7 @@ Shader "Unlit/RotationBlurShader"
 
             sampler2D _MainTex;
 
-            // ©bgolus: "The fragment shader is doing is taking the interpolated 
+            // ©bgolus: "The fragment shader is taking the interpolated 
             //           local vertex position, rotating it a bit, and calculating
             //           the resulting render texture screen space position. Then 
             //           sampling the low res render texture at that position. So 
@@ -56,7 +56,7 @@ Shader "Unlit/RotationBlurShader"
             fixed4 frag (v2f i) : SV_Target 
             {
                 #define NUMBER_OF_STEPS 64
-                #define ROTATION_RANGE 40
+                //#define ROTATION_RANGE 40
                 
                 float4 o0 = {0.0, 0.0, 0.0, 0.0};                               // fragment color 
                 float linear_curve = 0.0;                                       // linearly growing variable (from -0.5 ... +0.5 in 64 steps)
@@ -68,9 +68,9 @@ Shader "Unlit/RotationBlurShader"
                 {
                     linear_curve = (s + 0.5f) / NUMBER_OF_STEPS - 0.5f;         // linearly growing variable (from -0.5 ... +0.5 in 64 steps)   
                     //theta = linear_curve * ROTATION_RANGE * UNITY_PI / 180.0f;  // [rad] rotate the vertex (-20 deg .. 20 deg)
-                    theta = linear_curve * _spreading * UNITY_PI / 180.0f;  // [rad] rotate the vertex (-20 deg .. 20 deg)
+                    theta = linear_curve * _spreading * UNITY_PI / 180.0f;      // [rad] rotate the vertex (-20 deg .. 20 deg)
                     //weight = pow(2, ( -pow(linear_curve, 2) / (_sigma * _sigma * 0.5f) )  * 1.4427f);        // creates a sinusoidal curve y = (~0...1), weighting the center of frame at most
-                    weight = pow(2, ( -pow(linear_curve, 2) * _sigma_mod ));    // creates a sinusoidal curve y = (~0...1), weighting the center of frame at most
+                    weight = pow(2, ( -pow(linear_curve, 2) * _sigma_mod ));    // simplified above linecreates a sinusoidal curve y = (~0...1), weighting the center of frame at most
 
                     float4 oVertex = RotateAroundYInRad(i.oPos, theta);         // rotate cylinder's vertex around local y axis
 

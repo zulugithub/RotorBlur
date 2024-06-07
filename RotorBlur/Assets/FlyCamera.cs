@@ -25,7 +25,7 @@ public class FlyCamera : MonoBehaviour
 
     void OnEnable()
     {
-        if (focusOnEnable) Focused = true;
+        if (focusOnEnable) Focused = false;
     }
 
     void OnDisable() => Focused = false;

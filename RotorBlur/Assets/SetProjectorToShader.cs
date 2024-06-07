@@ -32,7 +32,7 @@ public class SetProjectorToShader : MonoBehaviour
         slider_sigma_value      = GameObject.Find("Text_sigma (1)").GetComponent<TextMeshProUGUI>();
         slider_spreading_value  = GameObject.Find("Text_spreading (1)").GetComponent<TextMeshProUGUI>();
 
-        FollowAndFocusOn(capture_camera, rotor);
+        FollowAndFocusOn(capture_camera, rotor, 0.65f);
     }
 
     public static Bounds GetBoundsWithChildren(GameObject gameObject)
@@ -49,12 +49,12 @@ public class SetProjectorToShader : MonoBehaviour
         }
         return bounds;
     }
-    public static void FollowAndFocusOn(Camera camera, GameObject focusedObject)
+    public static void FollowAndFocusOn(Camera camera, GameObject focusedObject, float spacingfactor)
     {
         Bounds bounds = GetBoundsWithChildren(focusedObject); // Debug.Log(bounds.extents.magnitude);
         float aspectRatio = 1; // Screen.width / Screen.height;
         float distance = (camera.transform.position - focusedObject.transform.position).magnitude;
-        camera.fieldOfView = 2.0f * Mathf.Rad2Deg * Mathf.Atan((0.5f * bounds.extents.magnitude) / (distance * aspectRatio *0.65f));
+        camera.fieldOfView = 2.0f * Mathf.Rad2Deg * Mathf.Atan((0.5f * bounds.extents.magnitude) / (distance * aspectRatio * spacingfactor));
         camera.transform.LookAt(focusedObject.transform);
     }
 
@@ -74,7 +74,7 @@ public class SetProjectorToShader : MonoBehaviour
 
         ///////////////////////////////////////////////////////////////////////////////////////
         // capture camera must follow rotor and change FOV
-        FollowAndFocusOn(capture_camera, cylinder);
+        FollowAndFocusOn(capture_camera, cylinder, 0.65f);
         // pass matrix and parameter to shader
         cylinder_material.SetMatrix("_ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld", capture_camera.projectionMatrix * capture_camera.worldToCameraMatrix * cylinder.transform.worldToLocalMatrix.inverse);
         cylinder_material.SetFloat("_sigma_mod", 1.0f / (Mathf.Pow(slider_sigma.value, 2.0f) * 0.5f / 1.4427f)); //
