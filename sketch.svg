@@ -2,12 +2,13 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 210 297"
+   width="173.50365mm"
+   height="87.939163mm"
+   viewBox="0 0 173.50365 87.939163"
    version="1.1"
    id="svg5"
    inkscape:version="1.1 (c68e22c387, 2021-05-23)"
+   sodipodi:docname="sketch.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns="http://www.w3.org/2000/svg"
@@ -23,14 +24,18 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="1.0482005"
-     inkscape:cx="405.93379"
-     inkscape:cy="416.42797"
+     inkscape:cx="359.66402"
+     inkscape:cy="342.01472"
      inkscape:window-width="1920"
      inkscape:window-height="1017"
      inkscape:window-x="-8"
      inkscape:window-y="-8"
      inkscape:window-maximized="1"
-     inkscape:current-layer="layer1" />
+     inkscape:current-layer="layer1"
+     fit-margin-left="15"
+     fit-margin-right="15"
+     fit-margin-bottom="5"
+     fit-margin-top="5" />
   <defs
      id="defs2">
     <marker
@@ -230,7 +235,15 @@
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
+     id="layer1"
+     transform="translate(-12.195529,-19.63943)">
+    <rect
+       style="opacity:1;vector-effect:none;fill:#ffffff;fill-opacity:1;stroke:#ffffff;stroke-width:0.1;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1;paint-order:markers fill stroke"
+       id="rect9067"
+       width="171.39096"
+       height="86.074104"
+       x="13.205195"
+       y="20.396681" />
     <g
        id="g1588"
        transform="translate(-53.761417,84.092718)">

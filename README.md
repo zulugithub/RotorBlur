@@ -2,7 +2,7 @@
 # RotorBlur / Unity 2023.2.16f1 / Built-in Render Pipeline
 
 ![](https://github.com/zulugithub/RotorBlur/blob/main/RotorBlur.png?raw=true "Title")
-![](https://github.com/zulugithub/RotorBlur/blob/main/sketch.svg?raw=true "Title")
+![](https://github.com/zulugithub/RotorBlur/blob/main/sketch.png?raw=true "Title")
 
 ## Introduction
 
