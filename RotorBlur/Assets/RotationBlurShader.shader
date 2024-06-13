@@ -104,9 +104,9 @@
 				for (uint j = 0; j < steps; ++j) { 
 			
 					float f = (j + 0.5) / steps - 0.5;
-					float a = MAX_BLUR_ANGLE_RAD * f;
-					float w = gaussian(f, _sigma * 0.25);
-					float4x4 mr = calcRotateMatrix(a);
+					float a = f * _spreading * UNITY_PI / 180.0f; // MAX_BLUR_ANGLE_RAD * f;
+					float w = gaussian(f, _sigma * 0.25);	// bell-shaped curve (Gaussian distribution equation)
+					float4x4 mr = calcRotateMatrix(a);		// rotate around local y-axis
 			
 					float4 p = mul(pos, mr);
 					float4 uvp = mul(p, _ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld);
@@ -125,7 +125,6 @@
 				}
 				rpos /= aw;
 			#endif
-		   
 
 				float4 acc = 0;
 				aw = 0;
@@ -133,9 +132,9 @@
 				for (uint j = 0; j < steps; ++j) {
 
 					float f = (j + 0.5) / steps - 0.5;
-					float a = f * _spreading * UNITY_PI / 180.0f;
-					float w = gaussian(f, _sigma * 0.5); 
-					float4x4 mr = calcRotateMatrix(a);
+					float a = f * _spreading * UNITY_PI / 180.0f; // MAX_BLUR_ANGLE_RAD * f;
+					float w = gaussian(f, _sigma * 0.50);	// bell-shaped curve (Gaussian distribution equation)
+					float4x4 mr = calcRotateMatrix(a);		// rotate around local y-axis
 
 					float4 p = mul(rpos, mr);
                     float4 uvp = mul(p, _ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld); // clipped position in projector space (principally same as UNITY_MATRIX_MVP but for capture_camera)
@@ -149,8 +148,7 @@
 				 }
 				 acc /= aw;
 
-				 return acc; 
-				
+				 return acc; 	
             }
             ENDCG
         }
