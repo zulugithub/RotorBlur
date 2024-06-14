@@ -1,6 +1,6 @@
 # Blender 4.1.0
 # www.blender.org
-mtllib cylinder.mtl
+mtllib bound_hub.mtl
 o Cylinder.005
 v 0.019095 0.540358 -0.193662
 v 0.120275 -0.517008 -0.498499

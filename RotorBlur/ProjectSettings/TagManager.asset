@@ -8,13 +8,13 @@ TagManager:
   - Default
   - TransparentFX
   - Ignore Raycast
-  - Rotor
+  - 
   - Water
   - UI
-  - Cylinder
-  - 
-  - 
-  - 
+  - Hub
+  - Bound_Hub
+  - Blade
+  - Bound_Blade
   - 
   - 
   - 
@@ -41,9 +41,15 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
-  - name: Cylinder
+  - name: Hub
     uniqueID: 3483332619
     locked: 0
-  - name: Cube
+  - name: Bound_Hub
     uniqueID: 2561003711
+    locked: 0
+  - name: Blade
+    uniqueID: 453317599
+    locked: 0
+  - name: Bound_Blade
+    uniqueID: 3399818223
     locked: 0

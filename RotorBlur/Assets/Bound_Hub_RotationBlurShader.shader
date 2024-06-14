@@ -1,4 +1,4 @@
-﻿Shader "Custom/HubRotationBlurShader"
+﻿Shader "Custom/Bound_Hub_RotationBlurShader"
 {
     Properties
     {
@@ -23,7 +23,7 @@
             float _spreading = 40; // [deg]
 			float _sigma = 0.35 ; // []
 			float _texScale = 1.0f;
-
+			 
             #pragma multi_compile_fwdbase nolightmap nodirlightmap nodynlightmap novertexlight
 
             struct appdata
