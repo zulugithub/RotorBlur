@@ -2,6 +2,9 @@ using System.Linq;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+//using static Unity.Mathematics.math;
+//using Unity.Mathematics;
+
 
 public class SetProjectorToShader : MonoBehaviour
 {
@@ -15,8 +18,9 @@ public class SetProjectorToShader : MonoBehaviour
     public GameObject blade;
     public GameObject bound_blade;
 
-
-
+    public RenderTexture hub_targetColor;
+    public RenderTexture hub_targetDepth;
+    public RenderTexture blade_targetColor;
 
     private Slider slider_rpm;
     private Slider slider_sigma;
@@ -28,10 +32,10 @@ public class SetProjectorToShader : MonoBehaviour
     private TextMeshProUGUI slider_texScale_value;
 
     private float ZoomAmount = 20;
-    public RenderTexture hub_targetColor;
-    public RenderTexture hub_targetDepth;
 
-    public RenderTexture blade_targetColor;
+    private Matrix4x4 hub_bladePos;
+    private Matrix4x4 blade_bladePos;
+
 
     void Awake()
     {
@@ -57,6 +61,7 @@ public class SetProjectorToShader : MonoBehaviour
         hub_capture_camera.depthTextureMode = DepthTextureMode.Depth;
         bound_hub_material.SetTexture("_MainTex", hub_targetColor);
         bound_hub_material.SetTexture("_DepthTex", hub_targetDepth);
+        hub_bladePos = Matrix4x4.Rotate(Quaternion.Euler(0, 0, 0));
         ///////////////////////////////////////////////////////////////////////////////////////
         blade_capture_camera.orthographic = true;
         //blade_capture_camera.orthographicSize = 1.3f;
@@ -66,6 +71,7 @@ public class SetProjectorToShader : MonoBehaviour
         blade_targetColor.antiAliasing = 1;
         blade_capture_camera.targetTexture = blade_targetColor;
         bound_blade_material.SetTexture("_MainTex", blade_targetColor);
+        blade_bladePos = Matrix4x4.Rotate(Quaternion.Euler(0, 25, 0));
         ///////////////////////////////////////////////////////////////////////////////////////
 
         for (int i = 0; i < 100; i++)
@@ -133,7 +139,7 @@ public class SetProjectorToShader : MonoBehaviour
         // capture camera must follow hub and change FOV
         FollowAndFocusOn(hub_capture_camera, bound_hub, 0.70f, true);
         // pass matrix and parameter to shader
-        Matrix4x4 bound_hub_sampleMatrix = (GL.GetGPUProjectionMatrix(hub_capture_camera.projectionMatrix, false) * hub_capture_camera.worldToCameraMatrix * bound_hub.transform.worldToLocalMatrix.inverse).transpose;
+        Matrix4x4 bound_hub_sampleMatrix = (GL.GetGPUProjectionMatrix(hub_capture_camera.projectionMatrix, false) * hub_capture_camera.worldToCameraMatrix  * bound_hub.transform.worldToLocalMatrix.inverse * hub_bladePos).transpose;
         
         float bound_hub_camera_size = hub_capture_camera.orthographicSize;
 
@@ -156,21 +162,20 @@ public class SetProjectorToShader : MonoBehaviour
         bound_hub_material.SetFloat("_texScale", slider_texScale.value); //                                                                 
         ///////////////////////////////////////////////////////////////////////////////////////
         FollowAndFocusOn(blade_capture_camera, bound_blade, 0.30f, false);
-        Matrix4x4 bound_blade_sampleMatrix = (GL.GetGPUProjectionMatrix(hub_capture_camera.projectionMatrix, false) * blade_capture_camera.worldToCameraMatrix * bound_blade.transform.worldToLocalMatrix.inverse).transpose;
+        Matrix4x4 bound_blade_sampleMatrix = (GL.GetGPUProjectionMatrix(hub_capture_camera.projectionMatrix, false) * blade_capture_camera.worldToCameraMatrix * bound_blade.transform.worldToLocalMatrix.inverse * blade_bladePos ).transpose;
        
         float bound_blade_camera_size = blade_capture_camera.orthographicSize;
-
         bound_blade_sampleMatrix[3, 0] = 0.5f;
         bound_blade_sampleMatrix[3, 1] = 0.5f;
         bound_blade_sampleMatrix[3, 2] = 0.5f;
-        bound_blade_sampleMatrix[0, 0] *= 0.5f/bound_blade_camera_size;
-        bound_blade_sampleMatrix[1, 0] *= 0.5f/bound_blade_camera_size;
-        bound_blade_sampleMatrix[2, 0] *= 0.5f/bound_blade_camera_size;
-        bound_blade_sampleMatrix[0, 1] *= 0.5f/bound_blade_camera_size;
-        bound_blade_sampleMatrix[1, 1] *= 0.5f/bound_blade_camera_size;
-        bound_blade_sampleMatrix[2, 1] *= 0.5f/bound_blade_camera_size;
-        bound_blade_sampleMatrix[0, 2] *= 0.5f/bound_blade_camera_size;
-        bound_blade_sampleMatrix[1, 2] *= 0.5f/bound_blade_camera_size;
+        bound_blade_sampleMatrix[0, 0] *= 0.5f / bound_blade_camera_size;
+        bound_blade_sampleMatrix[1, 0] *= 0.5f / bound_blade_camera_size;
+        bound_blade_sampleMatrix[2, 0] *= 0.5f / bound_blade_camera_size;
+        bound_blade_sampleMatrix[0, 1] *= 0.5f / bound_blade_camera_size;
+        bound_blade_sampleMatrix[1, 1] *= 0.5f / bound_blade_camera_size;
+        bound_blade_sampleMatrix[2, 1] *= 0.5f / bound_blade_camera_size;
+        bound_blade_sampleMatrix[0, 2] *= 0.5f / bound_blade_camera_size;
+        bound_blade_sampleMatrix[1, 2] *= 0.5f / bound_blade_camera_size;
         bound_blade_material.SetFloat("_sigma", slider_sigma.value); //
         bound_blade_material.SetFloat("_spreading", slider_spreading.value); //
         //bound_blade_material.SetFloat("_texScale", slider_texScale.value); //    

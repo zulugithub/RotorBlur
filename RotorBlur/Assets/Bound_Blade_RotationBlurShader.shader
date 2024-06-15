@@ -3,11 +3,24 @@
     Properties
     {
         [NoScaleOffset] _MainTex ("Color", 2D) = "white" {}
+
+		//[Enum(UnityEngine.Rendering.BlendMode)] // https://www.youtube.com/watch?v=vr1u8HbWTbo
+		//_SrcFactor("Src Factor",float) = 5
+		//[Enum(UnityEngine.Rendering.BlendMode)]
+		//_DstFactor("Dst Factor",float) = 10
+		//[Enum(UnityEngine.Rendering.BlendOp)]
+		//_Opp("Src Factor",float) = 0
     }
     SubShader
     {
-        Tags {"Queue"="Transparent" "IgnoreProjector"="False" "RenderType"="Transparent" "DisableBatching" = "True"}
-        ZWrite On Lighting Off Fog { Mode Off } Blend One OneMinusSrcAlpha
+        Tags {"Queue"="Transparent" "RenderType"="Fade" "IgnoreProjector"="False" "DisableBatching" = "True"}
+        ZWrite Off //Lighting Off Fog { Mode Off } 
+		//BlendOp [_Opp]
+		//Blend [_SrcFactor] [_DstFactor]
+		// finalValue = sourceFactor * sourceValue operation destinationFactor * destinationValue
+        // Blend <source factor RGB> <destination factor RGB>, <source factor alpha> <destination factor alpha>
+        BlendOp Add
+        Blend One OneMinusSrcAlpha, Zero One
 
         Pass
         {
@@ -18,26 +31,23 @@
 
             // Projection matrix of the camera acting as a projector * world to camera (acting as a projector) matrix  *  ObjectToWorld
             float4x4 _ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld; 
-            float _spreading = 1; // [deg]
+            float _spreading = 40; // [deg]
 			float _sigma = 0.35 ; // []
 			static float _texScale = 1.0;
 			static uint instanceCount = 100; 
-
 
             #pragma multi_compile_fwdbase nolightmap nodirlightmap nodynlightmap novertexlight
 
             struct appdata
 			{
                 float4 vertex : POSITION;
-                //float2 uv : TEXCOORD1;
             };
 
             struct v2f
             {
                 float3 pos : TEXCOORD0;     // Object (cylinder) position in object space
-                //float4 wpos : TEXCOORD1;    
+                float4 wpos : TEXCOORD1;    
                 float4 projPos : TEXCOORD2; 
-				//float2 uv : TEXCOORD1;
                 float4 sv_pos : SV_POSITION;
             };
 
@@ -112,10 +122,6 @@
 				[loop]
 				for (uint j = 0; j < steps; ++j) 
 				{
-					//float f = (j + 0.5) / steps - 0.5;
-					//float a = f * _spreading * UNITY_PI / 180.0f; // MAX_BLUR_ANGLE_RAD * f;
-					//float w = gaussian(f, _sigma * 0.50);	// bell-shaped curve (Gaussian distribution equation)
-					//float4x4 mr = calcRotateMatrix(a);		// rotate around local y-axis
 					float4x4 mr = calcRotateMatrixPS(j, steps, i.projPos.xy);
 
 					//float4 p = mul(pos, bladePos); // TODO
@@ -124,6 +130,7 @@
 
 					float2 uv = uvp.xy/uvp.w * _texScale;
 					fixed4 col = tex2D(_MainTex, uv); 
+
 					acc += col;
 				 }
 				 acc /= steps;
@@ -131,7 +138,7 @@
 				 acc.a += 1e-6;
 				 acc *= saturate(acc.a) / acc.a;		// normalize by alpha
 
-				 return acc; 	
+				 return acc;	
             }
             ENDCG
         }

@@ -14,7 +14,11 @@ Shader "Custom/Blade_RotationShader"
             Tags {"LightMode"="ForwardBase"}
             ZWrite Off 
             Fog { Mode Off } 
-            Blend SrcAlpha OneMinusSrcAlpha
+            // finalValue = sourceFactor * sourceValue operation destinationFactor * destinationValue
+            // Blend <source factor RGB> <destination factor RGB>, <source factor alpha> <destination factor alpha>
+            BlendOp Add
+            Blend SrcAlpha One, One One
+
 
             CGPROGRAM
             #pragma vertex vert
@@ -28,18 +32,18 @@ Shader "Custom/Blade_RotationShader"
 
             // compile shader into multiple variants, with and without shadows
             // (we don't care about any lightmaps yet, so skip these variants)
-            #pragma instancing_options procedural:setup 
+            //#pragma instancing_options procedural:setup 
             #pragma multi_compile_instancing nolightmap nodirlightmap nodynlightmap novertexlight
             //#pragma instancing_options procedural:ConfigureProcedural
             // shadow helper functions and macros
             #include "AutoLight.cginc"
 
-            void setup() 
-            {
-               #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
-                    uint temp = unity_InstanceID;
-                #endif  
-            } 
+            // void setup() 
+            // {
+            //    #ifdef UNITY_PROCEDURAL_INSTANCING_ENABLED
+            //         uint temp = unity_InstanceID;
+            //     #endif  
+            // } 
 
 			float4x4 calcRotateMatrix(float angle) 
 			{
@@ -121,8 +125,8 @@ Shader "Custom/Blade_RotationShader"
                 fixed shadow = SHADOW_ATTENUATION(i);
                 // darken light's illumination with shadow, keep ambient intact
                 fixed3 lighting = i.diff * shadow + i.ambient;
-                col.rgb *= lighting;
-                col.a = i.bladeAlpha * 1.0f;
+                col.rgb *= lighting * 1.1000000000000f; 
+                col.a = i.bladeAlpha * 1.000000000f;
                 return col;
             }
             ENDCG

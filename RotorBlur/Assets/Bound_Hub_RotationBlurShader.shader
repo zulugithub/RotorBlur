@@ -8,7 +8,9 @@
     SubShader
     {
         Tags {"Queue"="Transparent" "IgnoreProjector"="False" "RenderType"="Transparent" "DisableBatching" = "True"}
-        ZWrite On Lighting Off Fog { Mode Off } Blend One OneMinusSrcAlpha
+        ZWrite On Lighting Off Fog { Mode Off } 
+        BlendOp Add
+        Blend One OneMinusSrcAlpha, Zero One
 
         Pass
         {
