@@ -45,6 +45,10 @@ Shader "Custom/Blade_RotationShader"
             //     #endif  
             // } 
 
+			#define PI 3.1415926535897932384626433832795
+			#define MAX_BLUR_ANGLE 40.0
+            #define MAX_BLUR_ANGLE_RAD ((MAX_BLUR_ANGLE / 180.0) * PI)
+
 			float4x4 calcRotateMatrix(float angle) 
 			{
 				float s, c;
@@ -73,6 +77,18 @@ Shader "Custom/Blade_RotationShader"
 	            return instanceAlpha(id, instanceCount, sigma) / acc;
             }
 
+			float rand(float value) {
+				return frac(sin(value) * 143758.5453);
+			}
+
+            float4x4 calcRotateMatrixVS(uint instId, uniform bool useRand = false) {
+	            float f = (float)instId / (instanceCount - 1) - 0.5;
+	            float a = MAX_BLUR_ANGLE_RAD * f;
+	            if(useRand)
+		            a += (rand(instId) - 0.5) * 0.005;
+	            return calcRotateMatrix(a);
+            }
+
 
             struct appdata
             {
@@ -98,7 +114,7 @@ Shader "Custom/Blade_RotationShader"
                 UNITY_SETUP_INSTANCE_ID(v);  // https://forum.unity.com/threads/instance-id-in-shader.501821/#post-3266676
                 //UNITY_TRANSFER_INSTANCE_ID(v, o); // necessary only if you want to access instanced properties in the fragment Shader.
                       
-                float4x4 mr = calcRotateMatrix(instanceID * 0.01f);
+                float4x4 mr = calcRotateMatrixVS(instanceID);  
                 float4 p = mul(v.vertex, mr);
 
                 o.pos = UnityObjectToClipPos(p);

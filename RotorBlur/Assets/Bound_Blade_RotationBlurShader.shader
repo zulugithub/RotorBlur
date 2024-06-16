@@ -17,6 +17,7 @@
         ZWrite Off //Lighting Off Fog { Mode Off } 
 		//BlendOp [_Opp]
 		//Blend [_SrcFactor] [_DstFactor]
+		// https://docs.unity3d.com/Manual/SL-Blend.html
 		// finalValue = sourceFactor * sourceValue operation destinationFactor * destinationValue
         // Blend <source factor RGB> <destination factor RGB>, <source factor alpha> <destination factor alpha>
         BlendOp Add
@@ -109,7 +110,7 @@
 			// See DCS's '"...\Eagle Dynamics\Bazar\shaders\enlight\helicopterRotor.fx"
 			//
 			// https://github.com/TwoTailsGames/Unity-Built-in-Shaders/blob/master/CGIncludes/UnityCG.cginc
-			// https://forum.unity.com/threads/projecting-texture-from-a-camera-on-objects.628189/						ComputeNonStereoScreenPos(
+			// https://forum.unity.com/threads/projecting-texture-from-a-camera-on-objects.628189/#post-4307893			ComputeNonStereoScreenPos(
 			// https://forum.unity.com/threads/decodedepthnormal-linear01depth-lineareyedepth-explanations.608452/		_ZBufferParams.z
 			// https://forum.unity.com/threads/custom-shader-not-writing-to-depth-buffer.1048934/
 			// https://forum.unity.com/threads/mul-function-and-matrices.445266/										mul()
