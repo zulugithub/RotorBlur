@@ -81,3 +81,5 @@ crashlytics-build.properties
 
 # Blender backups
 *.blend1
+
+*[Cc][Oo][Pp][Yy]*
