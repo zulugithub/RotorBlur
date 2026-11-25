@@ -1,32 +1,39 @@
 using System.Linq;
 using TMPro;
-using UnityEditor;
 using UnityEngine;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UI;
-//using static Unity.Mathematics.math;
-//using Unity.Mathematics;
-
 
 public class SetProjectorToShader : MonoBehaviour
 {
     private Camera hub_capture_camera;
+    private Camera hub_depth_camera;
+    private Camera blade1_depth_camera;
+    private Camera blade2_depth_camera;
+    
     private Material bound_hub_material;
     private GameObject hub;
     private GameObject bound_hub;
 
-    private Camera blade_capture_camera;
-    private Material bound_blade_material;
-    private GameObject blade;
-    private GameObject bound_blade;
+    private Camera blade1_capture_camera;
+    private Camera blade2_capture_camera;
+    private Material bound_blade1_material;
+    private Material bound_blade2_material;
+    private GameObject blade1;
+    private GameObject blade2;
+    private GameObject bound_blade1;
+    private GameObject bound_blade2;
 
     private RenderTexture hub_targetColor;
     private RenderTexture hub_targetDepth;
-    private RenderTexture blade_targetColor;
+    private RenderTexture blade1_targetColor;
+    private RenderTexture blade1_targetDepth;
+    private RenderTexture blade2_targetColor;
+    private RenderTexture blade2_targetDepth;
 
     private Matrix4x4 hub_bladePos;
-    private Matrix4x4 blade_bladePos;
-
-
+    private Matrix4x4 blade1_bladePos;
+    private Matrix4x4 blade2_bladePos;
 
     private Slider slider_rpm;
     private Slider slider_sigma;
@@ -39,59 +46,6 @@ public class SetProjectorToShader : MonoBehaviour
 
     private float ZoomAmount = 20;
 
-
-    /*
-    static void AddLayerAt(SerializedProperty layers, int index, string layerName, bool tryOtherIndex = true)
-    {
-        // Skip if a layer with the name already exists.
-        for (int i = 0; i < layers.arraySize; ++i)
-        {
-            if (layers.GetArrayElementAtIndex(i).stringValue == layerName)
-            {
-                Debug.Log("Skipping layer '" + layerName + "' because it already exists.");
-                return;
-            }
-        }
-
-        // Extend layers if necessary
-        if (index >= layers.arraySize)
-            layers.arraySize = index + 1;
-
-        // set layer name at index
-        var element = layers.GetArrayElementAtIndex(index);
-        if (string.IsNullOrEmpty(element.stringValue))
-        {
-            element.stringValue = layerName;
-            Debug.Log("Added layer '" + layerName + "' at index " + index + ".");
-        }
-        else
-        {
-            Debug.LogWarning("Could not add layer at index " + index + " because there already is another layer '" + element.stringValue + "'.");
-
-            if (tryOtherIndex)
-            {
-                // Go up in layer indices and try to find an empty spot.
-                for (int i = index + 1; i < 32; ++i)
-                {
-                    // Extend layers if necessary
-                    if (i >= layers.arraySize)
-                        layers.arraySize = i + 1;
-
-                    element = layers.GetArrayElementAtIndex(i);
-                    if (string.IsNullOrEmpty(element.stringValue))
-                    {
-                        element.stringValue = layerName;
-                        Debug.Log("Added layer '" + layerName + "' at index " + i + " instead of " + index + ".");
-                        return;
-                    }
-                }
-
-                Debug.LogError("Could not add layer " + layerName + " because there is no space left in the layers array.");
-            }
-        }
-    }
-    */
-
     void Awake()
     {
         slider_rpm = GameObject.Find("Slider_rpm").GetComponent<Slider>();
@@ -103,100 +57,126 @@ public class SetProjectorToShader : MonoBehaviour
         slider_spreading_value = GameObject.Find("Text_spreading (1)").GetComponent<TextMeshProUGUI>();
         slider_texScale_value = GameObject.Find("Text_texScale (1)").GetComponent<TextMeshProUGUI>();
 
-
-        //SerializedObject serializedObject = new SerializedObject(asset[0]);
-        //SerializedProperty layers = serializedObject.FindProperty("layers");
-        //AddLayerAt(layers, 8, "Bike");
-        //LayerMask
-
-        //gameObject.layer uses only integers, but we can turn a layer name into a layer integer using LayerMask.NameToLayer()
-        //int hub_layer = LayerMask.NameToLayer("Hub");
-        //GameObject.Find("hub").layer = hub_layer;
-        //originalLayerMask |= (1 << layerToAdd);
-
-        //string[] layers_ = Enumerable.Range(0, 31).Select(index => LayerMask.LayerToName(index)).Where(l => !string.IsNullOrEmpty(l)).ToArray();
-        //Camera.main.cullingMask = Camera.main.cullingMask;
-        //Debug.Log(Camera.main.cullingMask);
-
-
-
         ///////////////////////////////////////////////////////////////////////////////////////
         /// hub
         ///////////////////////////////////////////////////////////////////////////////////////
-        hub = GameObject.Find("hub").transform.GetChild(0).gameObject; 
-        bound_hub   = GameObject.Find("bound_hub").transform.GetChild(0).gameObject;
+        hub = GameObject.Find("hub").transform.GetChild(0).gameObject;
+        bound_hub = GameObject.Find("bound_hub").transform.GetChild(0).gameObject;
         bound_hub.GetComponent<Renderer>().material = Resources.Load<Material>("Bound_Hub");
         bound_hub_material = bound_hub.GetComponent<Renderer>().materials[0];
 
-        var hub_cameraGameObject = new GameObject("hub_capture_camera"); // create camera GameObject
-        hub_cameraGameObject.transform.parent = Camera.main.transform; // add camera as child to main camera
-        hub_cameraGameObject.transform.localPosition = new Vector3(0, 0, 0);
-        hub_capture_camera = hub_cameraGameObject.AddComponent<Camera>();
-        hub_capture_camera.clearFlags = CameraClearFlags.SolidColor;
-        hub_capture_camera.backgroundColor = new Color(0,0,0,0);
-        hub_capture_camera.depth = -1;
-        hub_capture_camera.orthographic = true;
-        hub_capture_camera.orthographicSize = 1.2000000000000f; 
-        hub_capture_camera.useOcclusionCulling = true;
-        hub_capture_camera.cullingMask = LayerMask.GetMask("Hub");
-        hub.layer = LayerMask.NameToLayer("Hub");
-
-        int width = 256;
-        hub_targetColor = new(width, width, 0, RenderTextureFormat.ARGBFloat);
-        hub_targetColor.filterMode = FilterMode.Point;
+        int hubWidth = 256;
+        hub_targetColor = new RenderTexture(hubWidth, hubWidth, 24, RenderTextureFormat.ARGBFloat);
+        hub_targetColor.filterMode = FilterMode.Bilinear; // Trilinear/Bilinear wie im DCS Original
         hub_targetColor.antiAliasing = 1;
-        hub_targetDepth = new(width, width, 24, RenderTextureFormat.Depth);
-        hub_capture_camera.SetTargetBuffers(hub_targetColor.colorBuffer, hub_targetDepth.depthBuffer);
-        hub_capture_camera.depthTextureMode = DepthTextureMode.Depth;
+        hub_targetColor.Create();
+
+        hub_targetDepth = new RenderTexture(hubWidth, hubWidth, 24, RenderTextureFormat.Depth);
+        hub_targetDepth.filterMode = FilterMode.Point;
+        hub_targetDepth.antiAliasing = 1;
+        hub_targetDepth.Create();
+
+        // Color Capture Camera
+        hub_capture_camera = CreateCaptureCamera("hub_capture_camera", -2, 1.2f, "Hub", hub_targetColor);
+
+        // Depth Capture Camera (URP-kompatibler Ersatz für SetTargetBuffers)
+        hub_depth_camera = CreateCaptureCamera("hub_depth_camera", -3, 1.2f, "Hub", hub_targetDepth);
+
         bound_hub_material.SetTexture("_MainTex", hub_targetColor);
         bound_hub_material.SetTexture("_DepthTex", hub_targetDepth);
-        hub_bladePos = Matrix4x4.Rotate(Quaternion.Euler(0, 0, 0));
-        ///////////////////////////////////////////////////////////////////////////////////////
-
-
+        hub_bladePos = Matrix4x4.identity;
 
         ///////////////////////////////////////////////////////////////////////////////////////
-        /// blade
+        /// blade1
         ///////////////////////////////////////////////////////////////////////////////////////
-        blade = GameObject.Find("blade").transform.GetChild(0).gameObject;
-        bound_blade = GameObject.Find("bound_blade").transform.GetChild(0).gameObject;
-        bound_blade.GetComponent<Renderer>().material = Resources.Load<Material>("Bound_Blade");
-        bound_blade_material = bound_blade.GetComponent<Renderer>().materials[0];
+        blade1 = GameObject.Find("blade1").transform.GetChild(0).gameObject;
+        bound_blade1 = GameObject.Find("bound_blade1").transform.GetChild(0).gameObject;
+        bound_blade1.GetComponent<Renderer>().material = Resources.Load<Material>("Bound_Blade");
+        bound_blade1_material = bound_blade1.GetComponent<Renderer>().materials[0];
 
-        var blade_cameraGameObject = new GameObject("blade_capture_camera"); // create camera GameObject
-        blade_cameraGameObject.transform.parent = Camera.main.transform; // add camera as child to main camera
-        blade_cameraGameObject.transform.localPosition = new Vector3(0, 0, 0);
-        blade_capture_camera = blade_cameraGameObject.AddComponent<Camera>();
-        blade_capture_camera.clearFlags = CameraClearFlags.SolidColor;
-        blade_capture_camera.backgroundColor = new Color(0, 0, 0, 0);
-        blade_capture_camera.depth = -2;
-        blade_capture_camera.orthographic = true;
-        blade_capture_camera.orthographicSize = 10.00000000000f;
-        blade_capture_camera.useOcclusionCulling = true;
-        blade_capture_camera.cullingMask = LayerMask.GetMask("Blade");
-        blade.layer = LayerMask.NameToLayer("Blade");
+        int bladeWidth = 256 * 10;
+        blade1_targetColor = new RenderTexture(bladeWidth, bladeWidth, 24, RenderTextureFormat.ARGBFloat);
+        blade1_targetColor.filterMode = FilterMode.Bilinear;
+        blade1_targetColor.antiAliasing = 1;
+        blade1_targetColor.Create();
 
-        width = 256*2;
-        blade_targetColor = new(width, width, 0, RenderTextureFormat.ARGBFloat);
-        blade_targetColor.filterMode = FilterMode.Point;
-        blade_targetColor.antiAliasing = 1;
-        blade_capture_camera.targetTexture = blade_targetColor;
-        bound_blade_material.SetTexture("_MainTex", blade_targetColor);
-        blade_bladePos = Matrix4x4.Rotate(Quaternion.Euler(0, 0, 0));
+        blade1_targetDepth = new RenderTexture(bladeWidth, bladeWidth, 24, RenderTextureFormat.Depth);
+        blade1_targetDepth.filterMode = FilterMode.Point;
+        blade1_targetDepth.antiAliasing = 1;
+        blade1_targetDepth.Create();
+
+        // Color Capture Camera
+        blade1_capture_camera = CreateCaptureCamera("blade1_capture_camera", -2, 7.0f, "Blade1", blade1_targetColor);
+
+        // Depth Capture Camera (URP-kompatibler Ersatz für SetTargetBuffers)
+        blade1_depth_camera = CreateCaptureCamera("blade1_depth_camera", -2, 7.0f, "Blade1", blade1_targetDepth);
+        
+        bound_blade1_material.SetTexture("_MainTex", blade1_targetColor);
+        bound_blade1_material.SetTexture("_DepthTex", blade1_targetDepth);
+        blade1_bladePos = Matrix4x4.identity;
+
         ///////////////////////////////////////////////////////////////////////////////////////
+        /// blade2
+        ///////////////////////////////////////////////////////////////////////////////////////
+        blade2 = GameObject.Find("blade2").transform.GetChild(0).gameObject;
+        bound_blade2 = GameObject.Find("bound_blade2").transform.GetChild(0).gameObject;
+        bound_blade2.GetComponent<Renderer>().material = Resources.Load<Material>("Bound_Blade");
+        bound_blade2_material = bound_blade2.GetComponent<Renderer>().materials[0];
 
-        for (int i = 0; i < 100; i++)
-        { 
-           // Instantiate(blade, transform.position, transform.rotation * Quaternion.Euler(new Vector3(0,i,0)), transform);
-            Instantiate(blade, transform.position, transform.rotation * Quaternion.Euler(new Vector3(0,0,0)), hub.transform);
-        }
+        //int bladeWidth = 256 * 10;
+        blade2_targetColor = new RenderTexture(bladeWidth, bladeWidth, 24, RenderTextureFormat.ARGBFloat);
+        blade2_targetColor.filterMode = FilterMode.Bilinear;
+        blade2_targetColor.antiAliasing = 1;
+        blade2_targetColor.Create();
 
+        blade2_targetDepth = new RenderTexture(bladeWidth, bladeWidth, 24, RenderTextureFormat.Depth);
+        blade2_targetDepth.filterMode = FilterMode.Point;
+        blade2_targetDepth.antiAliasing = 1;
+        blade2_targetDepth.Create();
 
+        // Color Capture Camera
+        blade2_capture_camera = CreateCaptureCamera("blade2_capture_camera", -2, 7.0f, "Blade2", blade2_targetColor);
+
+        // Depth Capture Camera (URP-kompatibler Ersatz für SetTargetBuffers)
+        blade2_depth_camera = CreateCaptureCamera("blade2_depth_camera", -2, 7f, "Blade2", blade2_targetDepth);
+        
+        bound_blade2_material.SetTexture("_MainTex", blade2_targetColor);
+        bound_blade2_material.SetTexture("_DepthTex", blade2_targetDepth);
+        blade2_bladePos = Matrix4x4.identity;
     }
 
+    private Camera CreateCaptureCamera(string camName, float depth, float orthoSize, string layerName, RenderTexture targetRT)
+    {
+        var camGO = new GameObject(camName);
+        camGO.transform.parent = Camera.main.transform;
+        camGO.transform.localPosition = Vector3.zero;
 
+        var cam = camGO.AddComponent<Camera>();
+        cam.clearFlags = CameraClearFlags.SolidColor;
+        cam.backgroundColor = new Color(0, 0, 0, 0);
+        cam.depth = depth;
+        cam.orthographic = true;
+        cam.orthographicSize = orthoSize;
+        cam.useOcclusionCulling = true;
+        cam.cullingMask = LayerMask.GetMask(layerName);
+        cam.targetTexture = targetRT;
 
+        // URP-spezifische Kamera-Konfiguration
+        var urpCamData = camGO.AddComponent<UniversalAdditionalCameraData>();
+        urpCamData.renderType = CameraRenderType.Base;
+        urpCamData.renderPostProcessing = false;
+        urpCamData.renderShadows = false;
+        urpCamData.antialiasing = AntialiasingMode.None;
+        urpCamData.requiresColorOption = CameraOverrideOption.Off;
+        urpCamData.requiresDepthOption = CameraOverrideOption.Off;
 
+        // Layer für das Objekt sicherstellen
+        if (layerName == "Hub" && hub != null) hub.layer = LayerMask.NameToLayer(layerName);
+        if (layerName == "Blade1" && blade1 != null) blade1.layer = LayerMask.NameToLayer(layerName);
+        if (layerName == "Blade2" && blade2 != null) blade2.layer = LayerMask.NameToLayer(layerName);
+
+        return cam;
+    }
 
     public static Bounds GetBoundsWithChildren(GameObject gameObject)
     {
@@ -212,127 +192,137 @@ public class SetProjectorToShader : MonoBehaviour
         }
         return bounds;
     }
+
     public static void FollowAndFocusOn(Camera camera, GameObject focusedObject, float spacingfactor, bool control_clipping)
     {
-        Bounds bounds = GetBoundsWithChildren(focusedObject); // Debug.Log(bounds.extents.magnitude);
-        float aspectRatio = 1; // Screen.width / Screen.height;
+        Bounds bounds = GetBoundsWithChildren(focusedObject);
         float distance = (camera.transform.position - focusedObject.transform.position).magnitude;
-        //camera.fieldOfView = 2.0f * Mathf.Rad2Deg * Mathf.Atan((0.5f * bounds.extents.magnitude) / (distance * aspectRatio * spacingfactor));
-        
-        if (control_clipping == false)
+
+        camera.transform.LookAt(focusedObject.transform);
+        if (control_clipping)
         {
-            // camera.transform.LookAt(bounds.center); ///////////////////////////////xXXXXXXXXXXxx
-            camera.transform.LookAt(focusedObject.transform);
-        }
-        else
-        {
-            camera.transform.LookAt(focusedObject.transform);
-            camera.nearClipPlane = distance - bounds.extents.magnitude / 1.4f;
+            camera.nearClipPlane = Mathf.Max(0.01f, distance - bounds.extents.magnitude / 1.4f);
             camera.farClipPlane = distance + bounds.extents.magnitude / 1.4f;
         }
     }
 
-
-
-    void Update()
+    void LateUpdate()
     {
         slider_rpm_value.text = slider_rpm.value.ToString("0");
         slider_sigma_value.text = slider_sigma.value.ToString("0.00");
         slider_spreading_value.text = slider_spreading.value.ToString("0");
         slider_texScale_value.text = slider_texScale.value.ToString("0.00");
 
-        // demonstration: user moves camera 
-
         ZoomAmount += Input.GetAxis("Mouse ScrollWheel") * 10;
         ZoomAmount = Mathf.Clamp(ZoomAmount, 5, 100);
         Camera.main.fieldOfView = ZoomAmount;
-        // demonstration: rotate hub slowly to shwo effect from different angles
+
         hub.transform.Rotate(0, -slider_rpm.value * 6.0f * Time.deltaTime, 0, Space.Self);
-        blade.transform.Rotate(0, -slider_rpm.value * 6.0f * Time.deltaTime, 0, Space.Self);
-        bound_blade.transform.Rotate(0, -slider_rpm.value * 6.0f * Time.deltaTime, 0, Space.Self);
-
-
-
-
-
-
+        blade1.transform.Rotate(0, -slider_rpm.value * 6.0f * Time.deltaTime, 0, Space.Self);
+        blade2.transform.Rotate(0, -slider_rpm.value * 6.0f * Time.deltaTime, 0, Space.Self);
+        bound_blade1.transform.Rotate(0, -slider_rpm.value * 6.0f * Time.deltaTime, 0, Space.Self);
+        bound_blade2.transform.Rotate(0, -slider_rpm.value * 6.0f * Time.deltaTime, 0, Space.Self);
 
         ///////////////////////////////////////////////////////////////////////////////////////
         /// hub
         ///////////////////////////////////////////////////////////////////////////////////////
-        // capture camera must follow hub and change FOV
         FollowAndFocusOn(hub_capture_camera, bound_hub, 0.70f, true);
-        // pass matrix and parameter to shader
-        Matrix4x4 bound_hub_sampleMatrix = (GL.GetGPUProjectionMatrix(hub_capture_camera.projectionMatrix, false) * hub_capture_camera.worldToCameraMatrix  * bound_hub.transform.worldToLocalMatrix.inverse * hub_bladePos).transpose;
+        FollowAndFocusOn(hub_depth_camera, bound_hub, 0.70f, true);
 
-        float bound_hub_camera_size = 1;// hub_capture_camera.orthographicSize;
+        // WICHTIG FÜR URP: renderIntoTexture = true bei GL.GetGPUProjectionMatrix!
+        Matrix4x4 bound_hub_sampleMatrix = (
+            GL.GetGPUProjectionMatrix(hub_capture_camera.projectionMatrix, false) *
+            hub_capture_camera.worldToCameraMatrix *
+            bound_hub.transform.localToWorldMatrix *
+            hub_bladePos
+        ).transpose;
 
-        // https://forum.unity.com/threads/projecting-texture-from-a-camera-on-objects.628189/#post-4307893	 ComputeNonStereoScreenPos()
-        // "By default the projection matrix produces a position that's in a -w to w range on the x and y, but
-        //  for sampling a texture you want it in 0.0 to 1.0 range, so you need to scale and offset the matrix
-        //  to produce values in that range"	
-        //m4x4 =   [ *f  *f   0   0
-        //           *f  *f   0   0
-        //           *f  *f   0   0   
-        //            f   f   0   0] f = 0.5  (this matrix is transposed!)
-        bound_hub_sampleMatrix[3, 0]  = 0.5f; // column major order
-        bound_hub_sampleMatrix[3, 1]  = 0.5f;
-        bound_hub_sampleMatrix[0, 0] *= 0.5f/bound_hub_camera_size;
-        bound_hub_sampleMatrix[2, 0] *= 0.5f/bound_hub_camera_size;
-        bound_hub_sampleMatrix[0, 1] *= 0.5f/bound_hub_camera_size;
-        bound_hub_sampleMatrix[1, 1] *= 0.5f/bound_hub_camera_size;
-        bound_hub_sampleMatrix[2, 1] *= 0.5f/bound_hub_camera_size;
+        float bound_hub_camera_size = 1f;
+
+        bound_hub_sampleMatrix[3, 0] = 0.5f;
+        bound_hub_sampleMatrix[3, 1] = 0.5f;
+        bound_hub_sampleMatrix[0, 0] *= 0.5f / bound_hub_camera_size;
+        bound_hub_sampleMatrix[2, 0] *= 0.5f / bound_hub_camera_size;
+        bound_hub_sampleMatrix[0, 1] *= 0.5f / bound_hub_camera_size;
+        bound_hub_sampleMatrix[1, 1] *= 0.5f / bound_hub_camera_size;
+        bound_hub_sampleMatrix[2, 1] *= 0.5f / bound_hub_camera_size;
 
         bound_hub_material.SetMatrix("_ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld", bound_hub_sampleMatrix);
         bound_hub_material.SetMatrix("_ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld_inverse", bound_hub_sampleMatrix.inverse);
-        bound_hub_material.SetFloat("_sigma", slider_sigma.value); //
-        bound_hub_material.SetFloat("_spreading", slider_spreading.value); //
-        bound_hub_material.SetFloat("_texScale", slider_texScale.value); //                                                                 
+        bound_hub_material.SetFloat("_sigma", slider_sigma.value);
+        bound_hub_material.SetFloat("_spreading", slider_spreading.value);
+        bound_hub_material.SetFloat("_texScale", slider_texScale.value);
+
         ///////////////////////////////////////////////////////////////////////////////////////
-    
+        /// blade1
         ///////////////////////////////////////////////////////////////////////////////////////
-        /// blade
+        FollowAndFocusOn(blade1_capture_camera, bound_blade1, 0.70f, true);
+        FollowAndFocusOn(blade1_depth_camera, bound_blade1, 0.70f, true);
+
+        Matrix4x4 bound_blade1_sampleMatrix = (
+            GL.GetGPUProjectionMatrix(blade1_capture_camera.projectionMatrix, false) * blade1_capture_camera.worldToCameraMatrix *
+            bound_blade1.transform.localToWorldMatrix *
+            blade1_bladePos
+        ).transpose;
+
+        float bound_blade1_camera_size = 1f; //blade_capture_camera.orthographicSize;
+
+        bound_blade1_sampleMatrix[3, 0] = 0.5f;
+        bound_blade1_sampleMatrix[3, 1] = 0.5f;
+        bound_blade1_sampleMatrix[0, 0] *= 0.5f / bound_blade1_camera_size;
+        bound_blade1_sampleMatrix[2, 0] *= 0.5f / bound_blade1_camera_size;
+        bound_blade1_sampleMatrix[0, 1] *= 0.5f / bound_blade1_camera_size;
+        bound_blade1_sampleMatrix[1, 1] *= 0.5f / bound_blade1_camera_size;
+        bound_blade1_sampleMatrix[2, 1] *= 0.5f / bound_blade1_camera_size;
+
+        bound_blade1_material.SetMatrix("_ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld", bound_blade1_sampleMatrix);
+        bound_blade1_material.SetMatrix("_ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld_inverse", bound_blade1_sampleMatrix.inverse);
+        bound_blade1_material.SetFloat("_sigma", slider_sigma.value);
+        bound_blade1_material.SetFloat("_spreading", slider_spreading.value);
+        bound_blade1_material.SetFloat("_texScale", slider_texScale.value); 
+
         ///////////////////////////////////////////////////////////////////////////////////////
-        FollowAndFocusOn(blade_capture_camera, bound_blade, 0.30f, false);
-        Matrix4x4 bound_blade_sampleMatrix = (GL.GetGPUProjectionMatrix(hub_capture_camera.projectionMatrix, false) * blade_capture_camera.worldToCameraMatrix * bound_blade.transform.worldToLocalMatrix.inverse * blade_bladePos ).transpose;
-       
-        float bound_blade_camera_size = blade_capture_camera.orthographicSize;
-
-        // https://forum.unity.com/threads/projecting-texture-from-a-camera-on-objects.628189/#post-4307893	 ComputeNonStereoScreenPos()	
-        // "By default the projection matrix produces a position that's in a -w to w range on the x and y, but
-        //  for sampling a texture you want it in 0.0 to 1.0 range, so you need to scale and offset the matrix
-        //  to produce values in that range"	
-        //m4x4 =   [ *f  *f   0   0
-        //           *f  *f   0   0
-        //           *f  *f   0   0   
-        //            f   f   0   0] f = 0.5  (this matrix is transposed!)
-        bound_blade_sampleMatrix[3, 0]  = 0.5f; // column major order
-        bound_blade_sampleMatrix[3, 1]  = 0.5f;
-        bound_blade_sampleMatrix[0, 0] *= 0.5f / bound_blade_camera_size;
-        bound_blade_sampleMatrix[2, 0] *= 0.5f / bound_blade_camera_size;
-        bound_blade_sampleMatrix[0, 1] *= 0.5f / bound_blade_camera_size;
-        bound_blade_sampleMatrix[1, 1] *= 0.5f / bound_blade_camera_size;
-        bound_blade_sampleMatrix[2, 1] *= 0.5f / bound_blade_camera_size;
-
-        bound_blade_material.SetFloat("_sigma", slider_sigma.value); //
-        bound_blade_material.SetFloat("_spreading", slider_spreading.value); //
-        //bound_blade_material.SetFloat("_texScale", slider_texScale.value); //    
-        bound_blade_material.SetMatrix("_ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld", bound_blade_sampleMatrix); ////////XXXXXXXXXXXXXXXXXxx
+        /// blade2
         ///////////////////////////////////////////////////////////////////////////////////////
+        FollowAndFocusOn(blade2_capture_camera, bound_blade2, 0.70f, true);
+        FollowAndFocusOn(blade2_depth_camera, bound_blade2, 0.70f, true);
+
+        Matrix4x4 bound_blade2_sampleMatrix = (
+            GL.GetGPUProjectionMatrix(blade2_capture_camera.projectionMatrix, false) * blade2_capture_camera.worldToCameraMatrix *
+            bound_blade2.transform.localToWorldMatrix *
+            blade2_bladePos
+        ).transpose;
+
+        float bound_blade2_camera_size = 1f; //blade2_capture_camera.orthographicSize;
+
+        bound_blade2_sampleMatrix[3, 0] = 0.5f;
+        bound_blade2_sampleMatrix[3, 1] = 0.5f;
+        bound_blade2_sampleMatrix[0, 0] *= 0.5f / bound_blade2_camera_size;
+        bound_blade2_sampleMatrix[2, 0] *= 0.5f / bound_blade2_camera_size;
+        bound_blade2_sampleMatrix[0, 1] *= 0.5f / bound_blade2_camera_size;
+        bound_blade2_sampleMatrix[1, 1] *= 0.5f / bound_blade2_camera_size;
+        bound_blade2_sampleMatrix[2, 1] *= 0.5f / bound_blade2_camera_size;
+
+        bound_blade2_material.SetMatrix("_ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld", bound_blade2_sampleMatrix);
+        bound_blade2_material.SetMatrix("_ProjectionMatrix_times_WorldToCameraMatrix_times_ObjectToWorld_inverse", bound_blade2_sampleMatrix.inverse);
+        bound_blade2_material.SetFloat("_sigma", slider_sigma.value);
+        bound_blade2_material.SetFloat("_spreading", slider_spreading.value);
+        bound_blade2_material.SetFloat("_texScale", slider_texScale.value); 
 
 
-
-
-        // Debug.Log( (GL.GetGPUProjectionMatrix(hub_capture_camera.projectionMatrix, false) * hub_capture_camera.worldToCameraMatrix * bound_hub.transform.worldToLocalMatrix.inverse).transpose);
-        // Debug.Log(sampleMatrix);
-        // Debug.Log(bound_hub.transform.worldToLocalMatrix.inverse);
-        // Debug.Log(hub_capture_camera.worldToCameraMatrix);
-        // Debug.Log(hub_capture_camera.projectionMatrix);
-        // Debug.Log(GL.GetGPUProjectionMatrix(hub_capture_camera.projectionMatrix, false));
-        // Debug.Log(GL.GetGPUProjectionMatrix(hub_capture_camera.projectionMatrix, true));
-        // Debug.Log("------");
 
         if (Input.GetKeyDown(KeyCode.Escape))
+        {
             Application.Quit();
+        }
+    }
+    void OnDestroy()
+    {
+        if (hub_targetColor != null) hub_targetColor.Release();
+        if (hub_targetDepth != null) hub_targetDepth.Release();
+        if (blade1_targetColor != null) blade1_targetColor.Release();
+        if (blade1_targetDepth != null) blade1_targetDepth.Release();
+        if (blade2_targetColor != null) blade2_targetColor.Release();
+        if (blade2_targetDepth != null) blade2_targetDepth.Release();
     }
 }
