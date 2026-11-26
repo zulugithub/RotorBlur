@@ -1,5 +1,5 @@
 
-# RotorBlur / Unity 2023.2.16f1 / Built-in Render Pipeline
+# RotorBlur / Unity 6000.5.6 / URP
 
 ![](https://github.com/zulugithub/RotorBlur/blob/main/RotorBlur.png?raw=true "Title")
 ![](https://github.com/zulugithub/RotorBlur/blob/main/sketch.png?raw=true "Title")
@@ -24,10 +24,10 @@ Depth reprojection (prior to above step)
 
 
 Shader: 
-https://github.com/zulugithub/RotorBlur/blob/main/RotorBlur/Assets/RotationBlurShader.shader
+https://github.com/zulugithub/RotorBlur/blob/main/RotorBlur/Assets/Bound_Hub_RotationBlurShader.shader
 
 C# script:
-https://github.com/zulugithub/RotorBlur/blob/main/RotorBlur/Assets/SetProjectorToShader.cs
+https://github.com/zulugithub/RotorBlur/blob/main/RotorBlur/Assets/RotorBlurUnit.cs
 
 ## Credits
 
