@@ -11,6 +11,7 @@ public class RotorBlurUnit : MonoBehaviour
     public Renderer proxyRenderer;
     [Tooltip("Das Shader-Material (Custom/Bound_Hub_RotationBlurShader_URP)")]
     public Material blurMaterial;
+    [Min(1)] public int bladeCount = 2;
 
     [Header("Capture-Einstellungen")]
     public int textureSize = 512;
