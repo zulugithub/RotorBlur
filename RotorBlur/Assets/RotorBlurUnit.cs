@@ -123,7 +123,7 @@ public class RotorBlurUnit : MonoBehaviour
         Camera mainCam = Camera.main;
         if (mainCam == null || sharedCaptureCam == null || proxyRenderer == null || runtimeMaterial == null) return;
 
-        // 1. Capture from the main camera's direction, but frame the rotor orthographically.
+        // 1. Use the main camera's viewpoint so projection follows its position and rotation.
         sharedCaptureCam.CopyFrom(mainCam);
         sharedCaptureCam.enabled = false;
         sharedCaptureCam.targetTexture = null;
@@ -132,9 +132,11 @@ public class RotorBlurUnit : MonoBehaviour
         sharedCaptureCam.backgroundColor = new Color(0, 0, 0, 0);
         sharedCaptureCam.useOcclusionCulling = false;
         sharedCaptureCam.rect = new Rect(0f, 0f, 1f, 1f);
-        sharedCaptureCam.orthographic = true;
-        sharedCaptureCam.aspect = 1f;
-        sharedCaptureCam.transform.rotation = mainCam.transform.rotation;
+        sharedCaptureCam.aspect = mainCam.aspect;
+        sharedCaptureCam.transform.SetPositionAndRotation(
+            mainCam.transform.position,
+            mainCam.transform.rotation
+        );
 
         Bounds captureBounds = proxyRenderer.bounds;
         for (int i = 0; i < sourceRenderers.Count; i++)
@@ -145,30 +147,25 @@ public class RotorBlurUnit : MonoBehaviour
 
         Vector3 extents = captureBounds.extents;
         Transform captureTransform = sharedCaptureCam.transform;
-        float halfWidth =
-            Mathf.Abs(captureTransform.right.x) * extents.x +
-            Mathf.Abs(captureTransform.right.y) * extents.y +
-            Mathf.Abs(captureTransform.right.z) * extents.z;
-        float halfHeight =
-            Mathf.Abs(captureTransform.up.x) * extents.x +
-            Mathf.Abs(captureTransform.up.y) * extents.y +
-            Mathf.Abs(captureTransform.up.z) * extents.z;
         float halfDepth =
             Mathf.Abs(captureTransform.forward.x) * extents.x +
             Mathf.Abs(captureTransform.forward.y) * extents.y +
             Mathf.Abs(captureTransform.forward.z) * extents.z;
-        sharedCaptureCam.orthographicSize = Mathf.Max(0.01f, Mathf.Max(halfWidth, halfHeight) * 1.05f);
 
         float radius = Mathf.Max(extents.magnitude, 0.01f);
-        float distance = radius + 0.1f;
-        Vector3 targetPos = captureBounds.center;
-        captureTransform.position = targetPos - captureTransform.forward * distance;
+        float distance = captureTransform.InverseTransformPoint(captureBounds.center).z;
 
         if (controlClipping)
         {
-            float clipRadius = Mathf.Max(halfDepth, radius / Mathf.Max(clippingDivisor, 0.01f));
+            float clipRadius = Mathf.Max(
+                halfDepth * 1.05f,
+                radius / Mathf.Max(clippingDivisor, 0.01f)
+            );
             sharedCaptureCam.nearClipPlane = Mathf.Max(0.01f, distance - clipRadius);
-            sharedCaptureCam.farClipPlane = distance + clipRadius;
+            sharedCaptureCam.farClipPlane = Mathf.Max(
+                sharedCaptureCam.nearClipPlane + 0.01f,
+                distance + clipRadius
+            );
         }
         else
         {
